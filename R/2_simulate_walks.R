@@ -94,6 +94,7 @@ z_cov <- activity.df %>%
 
 # scale activity covariate to [0,1]
 z_cov_scaled <- z_cov/max(z_cov)
+j<-1;s<-1
 
 for (j in 1:nrow(key)) {
   
@@ -213,15 +214,16 @@ for (j in 1:nrow(key)) {
     if(0){
       grid_shift <- grid.list[["g12"]]
       grid_shift$x  <- grid_shift$x + c(50, 50)
+      ids <- sample(1:nrow(hrc), 60)
+      hrc_plot <- st_multipoint(hrc[ids,])
+      
       gp <- ggplot() +
         geom_sf(aes(col = "black"), fill = NA, linetype = "dotted", data = grid_shift) +
         geom_sf(aes(col = "black"), fill = NA, data = cam_grid) +
-        geom_sf(aes(col = NA), data = st_buffer(st_multipoint(hrc), key$hr_r[j]), 
-                alpha = 0.1, fill = "firebrick") +
-        geom_sf(aes(col = "firebrick"), data = st_multipoint(hrc)) +
-        geom_point(aes(x = step0[,1], y = step0[,2]), shape = 8) +
-        #geom_sf(aes(col = "black"), data = init_pnts) +
-        #theme_void() +
+        geom_sf(aes(col = NA), alpha = 0.1, fill = "firebrick", data = 
+                    st_buffer(hrc_plot, key$hr_r[j])) +
+        geom_sf(aes(col = "firebrick"), data = st_multipoint(hrc_plot)) +
+        geom_point(aes(x = step0[ids,1], y = step0[ids,2]), shape = 8) +
         scale_color_manual(name = NULL, values = c("black", "firebrick"),
                            labels = c("Intial location", 
                                       "Home range centre + Home range area")) +

@@ -30,7 +30,7 @@ truth_table <- results %>% filter(model %in% c("BP", "PP")) %>%
          mu = paste0(round(min_p_PP, 4), " - ", round(max_p_PP, 4))) %>%
   select(hrc_hra:speed, p, mu)
 
-write_excel_csv(truth_table, "data/tab/ground_truth_p.csv")
+write_excel_csv(truth_table, "tab/ground_truth_p.csv")
 
 # tabular format - abundance and sit_use frequency
 truth_table <- results %>% 
@@ -40,7 +40,7 @@ truth_table <- results %>%
             min_su_freq = min(truth2), 
             max_su_freq = max(truth2))
 
-write_excel_csv(truth_table, "data/tab/ground_truth_lambda.csv")
+write_excel_csv(truth_table, "tab/ground_truth_lambda.csv")
 
 ### Bias (figures) -------------------------------------------------------------
 
@@ -155,14 +155,15 @@ use_freq <- bias_facet_plot(dat = results %>% filter(!grepl("ZIP", model)),
                              param = "lambda", bias_col = "bias2")
 
 ## Relative abundance (trend analysis)
+N_all <- unique(results$N)
 trend_results <-
-  foreach(i = seq(1,length(unique(key$N)), by = 3), .combine = "rbind") %do% {
+  foreach(i = seq(1,length(N_all), by = 3), .combine = "rbind") %do% {
     
     results_N <- results %>% 
       # filter per density
       filter(par == "lambda" & model != "BB",
              truth > 0, divergent < 200, rhat < 1.02,
-             N %in% unique(key$N)[i:(i+2)]) %>%
+             N %in% N_all[i:(i+2)]) %>%
       # drop unneeded columns
       select(-c(N_lbl, n1:p1, naive:CI_coverage2)) %>% 
       # pivot
@@ -198,7 +199,7 @@ trend_results <-
     out <- out %>% 
       mutate(bias = estimate - truth,
              rel_bias = (estimate - truth)/ truth,
-             Nref = unique(key$N)[i],
+             Nref = N_all[i],
              Nref_lbl = paste0("N = ", Nref)) %>%
       select(method:sim_id, Nref, Nref_lbl, everything())
     
@@ -208,8 +209,7 @@ trend_results <-
 
 # reorder factor levels
 trend_results <- trend_results %>%
-  mutate(Nref_lbl = 
-           factor(Nref_lbl, levels = paste0("N = ", sort(unique(key$N)))))
+  mutate(Nref_lbl = factor(Nref_lbl, levels = paste0("N = ", sort(N_all))))
 
 # facet labels
 trend_labs <- c("10 % decrease", "20 % decrease")
@@ -294,33 +294,6 @@ ggarrange(
 ggsave("fig/main/bias_facet_plot.jpg", 
        width = 16, height = 24, unit = "cm", dpi = 300, device = "jpg")
 
-
-trend_results %>%
-  filter(ncam == 36) %>%
-  # Plot!
-  ggplot() +
-  geom_boxplot(aes(x = rel_bias, y = factor(gsub("trend", "", trend)), col = Nref_lbl), 
-               outlier.shape = NA) +
-  geom_vline(xintercept = 0, linetype = "dotted", size = 1) +
-  labs(x = "", y = "Trend (%)") +
-  scale_x_continuous(limits = c(-4.5, 4.5)) +
-  facet_nested(hrc + hra ~ model, drop = T, labeller = label_parsed) +
-  theme_bw() +
-  theme(
-    axis.title = element_text(size = 14, face = "bold"),
-    axis.text.y = element_text(size = 12),
-    axis.text.x = element_text(size = 12, angle = 45, vjust = 0.5, 
-                               margin = margin(5,40,5,40)),
-    strip.text = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12),
-    legend.title = element_blank(),
-    legend.position = "top",
-    panel.grid = element_blank()
-  )
-
-ggsave(paste0(o_dir, "main_paper/relbias_trend.jpg"), 
-       width = 16, height = 16, unit = "cm", dpi = 300, device = "jpg")
-
 ### Bias (tables) --------------------------------------------------------------
 
 get_summary_table <- function(dat, param, use = F) {
@@ -345,23 +318,23 @@ get_summary_table <- function(dat, param, use = F) {
 
 ## Detection probability 
 table_p <- get_summary_table(results, "p")
-write_excel_csv(table_p, "data/tab/summary_table_p.csv")
+write_excel_csv(table_p, "tab/summary_table_p.csv")
 
 ## Abundance
 # traditional abundance
 table_abun <- get_summary_table(results, "lambda")
-write_excel_csv(table_abun, "data/tab/summary_table_abundance.csv")
+write_excel_csv(table_abun, "tab/summary_table_abundance.csv")
 
 # site use frequency 
 table_use_freq <- get_summary_table(results, "lambda", use = T)
-write_excel_csv(table_use_freq,"data/tab/summary_table_site-use_frequency.csv")
+write_excel_csv(table_use_freq,"tab/summary_table_site-use_frequency.csv")
 
 bias_table <- bind_cols(
   table_p %>% select(hrc:speed, starts_with("pctOK"), -ends_with("ZIP")),
   table_abun %>% select(starts_with("pctOK"), -ends_with("ZIP")),
   table_use_freq %>% select(starts_with("pctOK"), -ends_with("ZIP"))
   )
-write_excel_csv(bias_table, "data/tab/summary_table_relbias.csv")
+write_excel_csv(bias_table, "tab/summary_table_relbias.csv")
 
 ## Relative abundance (trend analysis)
 table_trend <- 
@@ -377,6 +350,6 @@ table_trend <-
   select(hrc_hra:speed, ends_with("trend10"), ends_with("trend20")) %>%
   bind_rows(summarise_all(., ~ if(is.numeric(.)) median(.) else "Median"))
 
-write_excel_csv(table_trend, "data/tab/summary_table_trend.csv")
+write_excel_csv(table_trend, "tab/summary_table_trend.csv")
 
 ### END Bias (tables) ----------------------------------------------------------

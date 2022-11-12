@@ -2,6 +2,7 @@
 library(tidyverse)
 library(data.table)
 library(sf)
+source("R/functions.R")
 select <- dplyr::select
 
 ## set key

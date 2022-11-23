@@ -52,7 +52,7 @@ key <-
 groupsize <- ct_data %>% pull(animal_count)
 
 # calculate activity density over radians in interval [0; 2*pi]
-dens <- density2(ct_time_data$image_sequence_time_rad, from = 0, to = 2*pi)
+dens <- density2(ct_data$image_sequence_time_rad, from = 0, to = 2*pi)
 plot(dens$x, dens$y, type="l")
 
 # store densities in dataframe activity.df
@@ -72,7 +72,6 @@ z_cov <- activity.df %>%
 
 # scale activity covariate to [0,1]
 z_cov_scaled <- z_cov/max(z_cov)
-j<-1;s<-1
 
 for (j in 1:nrow(key)) {
   

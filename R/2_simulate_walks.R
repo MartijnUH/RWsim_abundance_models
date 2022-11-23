@@ -13,7 +13,7 @@ memory.size(max = 5*10^6)
 select <- dplyr::select
 
 grid.list <- readRDS("data/grids.rds")
-ct_data <- read.csv("data/NPHK_data.csv", sep = ";", stringsAsFactors = FALSE)
+ct_data <- read.csv("data/NPHK_data.csv")
 
 # output directory
 odir <- "data/rw/"
@@ -49,32 +49,10 @@ key <-
 # Simulation
 ###############
 ## A. Generate temporal covariate for state probabilities
-# trim ct data
-ct_data <- ct_data %>%
-  filter(!grepl("x2", deployment_sampling_point),  # exclude redundant deployments
-         !deployment_sampling_point %in% c("JW_0361", "JW_0362"),  # exclude deployments manually
-         !is.na(deployment_sampling_point)) %>%  # exclude deployments with NA value
-  filter(animal_scientific_name == "Sus scrofa")  # subset data for species ...
-
 groupsize <- ct_data %>% pull(animal_count)
 
-# extract time columns for ct_data
-ct_time_data <- ct_data %>% 
-  separate(image_sequence_datetime, 
-           into = c("image_sequence_date",
-                    "image_sequence_timez"), 
-           sep = "T", remove = FALSE) %>%
-  separate(image_sequence_timez, 
-           into = c("image_sequence_time","x"), 
-           sep = "Z", remove = TRUE) %>%
-  dplyr::select(animal_scientific_name, 
-                image_sequence_datetime,
-                image_sequence_date, 
-                image_sequence_time) %>%
-  mutate(image_sequence_time_rad = hms_to_rad(image_sequence_time))
-
 # calculate activity density over radians in interval [0; 2*pi]
-dens <- density2(ct_time_data$image_sequence_time_rad, from = 0, to = 2*pi)
+dens <- density2(ct_data$image_sequence_time_rad, from = 0, to = 2*pi)
 plot(dens$x, dens$y, type="l")
 
 # store densities in dataframe activity.df
@@ -94,7 +72,6 @@ z_cov <- activity.df %>%
 
 # scale activity covariate to [0,1]
 z_cov_scaled <- z_cov/max(z_cov)
-j<-1;s<-1
 
 for (j in 1:nrow(key)) {
   
